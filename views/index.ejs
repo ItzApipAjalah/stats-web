@@ -79,7 +79,7 @@
                 </div>
                 <div class="h-[500px] overflow-y-auto pr-2 minecraft-chat-box">
                     <div class="space-y-2">
-                        <% chat.messages.forEach(msg => { %>
+                        <% [...chat.messages].reverse().forEach(msg => { %>
                             <div class="group hover:bg-gray-700 hover:bg-opacity-50 p-2 rounded transition-all">
                                 <div class="flex items-start space-x-2">
                                     <img src="https://mc-heads.net/avatar/<%= msg.player_name %>" alt="<%= msg.player_name %>" class="w-6 h-6 rounded hidden group-hover:block">
