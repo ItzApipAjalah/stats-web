@@ -2,9 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-    font-family: 'Minecraftia';
-    src: url('/fonts/Minecraftia-Regular.ttf') format('truetype');
+@import url('https://fonts.cdnfonts.com/css/minecraft-4');
+
+/* Ensure the font is applied globally */
+@layer base {
+    body {
+        font-family: 'Minecraft', sans-serif !important;
+    }
 }
 
 .minecraft-btn {

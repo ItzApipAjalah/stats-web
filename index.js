@@ -10,6 +10,7 @@ app.set('view engine', 'ejs');
 
 // Serve static files from public directory
 app.use(express.static('public'));
+app.use('/fonts', express.static(path.join(__dirname, 'public/fonts')));
 
 // Main route
 app.get('/', async (req, res) => {

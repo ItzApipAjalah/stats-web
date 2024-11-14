@@ -28,6 +28,9 @@
             "dest": "/views/$1"
         },
         {
+            "handle": "filesystem"
+        },
+        {
             "src": "/(.*)",
             "dest": "index.js"
         }

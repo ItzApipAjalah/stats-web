@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css --watch"
+    "build:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css",
+    "dev:css": "tailwindcss -i ./public/css/input.css -o ./public/css/output.css --watch"
   },
   "keywords": [
     "minecraft",

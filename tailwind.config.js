@@ -11,7 +11,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        minecraft: ['MinecraftiaRegular', 'sans-serif'],
+        minecraft: ['Minecraft', 'sans-serif'],
       },
     },
   },

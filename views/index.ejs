@@ -4,16 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minecraft Server Status</title>
+    <link href="https://fonts.cdnfonts.com/css/minecraft-4" rel="stylesheet">
     <link href="/css/output.css" rel="stylesheet">
 </head>
 <body class="bg-minecraft-dirt bg-opacity-90 min-h-screen font-minecraft text-white">
-    <div class="container mx-auto px-4 py-8">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl text-yellow-300 shadow-lg">Server Status</h1>
+    <!-- Navbar -->
+    <nav class="bg-gray-900 bg-opacity-90 border-b-2 border-minecraft-stone shadow-lg">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-8">
+                    <span class="text-2xl text-yellow-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                        Server Status
+                    </span>
+                    <div class="hidden md:flex space-x-4">
+                        <span class="text-green-400 hover:text-green-300 cursor-pointer transition-colors">
+                            Players: <%= onlinePlayers.total_online %>
+                        </span>
+                        <span class="text-blue-400 hover:text-blue-300 cursor-pointer transition-colors">
+                            Total: <%= playerList.length %>
+                        </span>
+                    </div>
+                </div>
+                <div class="text-gray-400 text-sm">
+                    Last updated: <%= new Date().toLocaleTimeString() %>
+                </div>
+            </div>
         </div>
+    </nav>
 
-        <!-- Main Content -->
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
         <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
             <!-- Online Players -->
             <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone">
