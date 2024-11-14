@@ -1,11 +1,15 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
+
+// Set views directory
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
 
 // Serve static files from public directory
 app.use(express.static('public'));
-app.set('view engine', 'ejs');
 
 // Main route
 app.get('/', async (req, res) => {
