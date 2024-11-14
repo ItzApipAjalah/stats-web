@@ -8,6 +8,33 @@
     <link href="/css/output.css" rel="stylesheet">
 </head>
 <body class="bg-minecraft-dirt bg-opacity-90 min-h-screen font-minecraft text-white">
+    <%
+        function formatToWIB(utcDate) {
+            const date = new Date(utcDate);
+            return date.toLocaleString('en-US', { 
+                timeZone: 'Asia/Jakarta',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+
+        function formatFullWIB(utcDate) {
+            const date = new Date(utcDate);
+            return date.toLocaleString('en-US', { 
+                timeZone: 'Asia/Jakarta',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+        }
+    %>
+
     <!-- Navbar -->
     <nav class="bg-gray-900 bg-opacity-90 border-b-2 border-minecraft-stone shadow-lg">
         <div class="container mx-auto px-4">
@@ -42,7 +69,7 @@
                         </span>
                     </div>
                     <div class="text-gray-400 text-sm">
-                        Last updated: <%= new Date().toLocaleTimeString() %>
+                        Last updated: <%= formatToWIB(new Date()) %> WIB
                     </div>
                 </div>
             </div>
@@ -59,7 +86,7 @@
                         </span>
                     </div>
                     <div class="text-gray-400 text-sm text-center">
-                        Last updated: <%= new Date().toLocaleTimeString() %>
+                        Last updated: <%= formatToWIB(new Date()) %> WIB
                     </div>
                 </div>
             </div>
@@ -121,7 +148,7 @@
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-baseline gap-x-1 text-xs sm:text-sm">
                                             <span class="text-gray-400 whitespace-nowrap">
-                                                <%= new Date(msg.created_at).toLocaleTimeString() %>
+                                                <%= formatToWIB(msg.created_at) %>
                                             </span>
                                             <span class="text-yellow-500 whitespace-nowrap">&lt;<%= msg.player_name %>&gt;</span>
                                             <span class="text-gray-200 break-words"><%= msg.message %></span>
@@ -149,7 +176,7 @@
                             <div class="min-w-0 flex-1">
                                 <div class="text-gray-200 text-sm sm:text-base truncate"><%= player.player_name %></div>
                                 <div class="text-xs text-gray-400 truncate">
-                                    First seen: <%= new Date(player.created_at).toLocaleString() %>
+                                    First seen: <%= formatFullWIB(player.created_at) %> WIB
                                 </div>
                             </div>
                         </div>
