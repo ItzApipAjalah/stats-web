@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Server Status</title>
+    <link href="/css/output.css" rel="stylesheet">
+</head>
+<body class="bg-minecraft-dirt bg-opacity-90 min-h-screen font-minecraft text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl text-yellow-300 shadow-lg">Server Status</h1>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
+            <!-- Online Players -->
+            <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl text-green-400">Online Players</h2>
+                    <span class="bg-green-500 px-3 py-1 rounded-full text-sm">
+                        <%= onlinePlayers.total_online %> Online
+                    </span>
+                </div>
+                <div class="space-y-3">
+                    <% onlinePlayers.player_list.forEach(player => { %>
+                        <div class="flex items-center space-x-3 bg-gray-700 bg-opacity-50 p-3 rounded minecraft-btn border-gray-600">
+                            <img src="https://mc-heads.net/avatar/<%= player.player_name %>" alt="<%= player.player_name %>" class="w-8 h-8 rounded">
+                            <div>
+                                <div class="text-green-400"><%= player.player_name %></div>
+                                <div class="text-xs text-gray-400">
+                                    <%
+                                        const joinedDate = new Date(player.joined_at);
+                                        const now = new Date();
+                                        const diffMs = now - joinedDate;
+                                        const diffMins = Math.floor(diffMs / 60000);
+                                        const hours = Math.floor(diffMins / 60);
+                                        const mins = diffMins % 60;
+                                        const timeString = hours > 0 ? 
+                                            `${hours}h ${mins}m` : 
+                                            `${mins}m`;
+                                    %>
+                                    Time playing: <%= timeString %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl text-yellow-400">Server Chat</h2>
+                    <span class="bg-yellow-500 px-3 py-1 rounded-full text-sm">
+                        <%= chat.total %> Messages
+                    </span>
+                </div>
+                <div class="h-[500px] overflow-y-auto pr-2 minecraft-chat-box">
+                    <div class="space-y-2">
+                        <% chat.messages.forEach(msg => { %>
+                            <div class="group hover:bg-gray-700 hover:bg-opacity-50 p-2 rounded transition-all">
+                                <div class="flex items-start space-x-2">
+                                    <img src="https://mc-heads.net/avatar/<%= msg.player_name %>" alt="<%= msg.player_name %>" class="w-6 h-6 rounded hidden group-hover:block">
+                                    <div>
+                                        <span class="text-gray-400 text-xs">
+                                            <%= new Date(msg.created_at).toLocaleTimeString() %>
+                                        </span>
+                                        <span class="text-yellow-500">&lt;<%= msg.player_name %>&gt;</span>
+                                        <span class="text-gray-200"><%= msg.message %></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Players -->
+            <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone lg:col-span-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl text-blue-400">All Players</h2>
+                    <span class="bg-blue-500 px-3 py-1 rounded-full text-sm">
+                        Total: <%= playerList.length %>
+                    </span>
+                </div>
+                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 max-h-[300px] overflow-y-auto pr-2">
+                    <% playerList.forEach(player => { %>
+                        <div class="flex items-center space-x-3 bg-gray-700 bg-opacity-50 p-3 rounded minecraft-btn border-gray-600">
+                            <img src="https://mc-heads.net/avatar/<%= player.player_name %>" alt="<%= player.player_name %>" class="w-8 h-8 rounded">
+                            <div>
+                                <div class="text-gray-200"><%= player.player_name %></div>
+                                <div class="text-xs text-gray-400">
+                                    First seen: <%= new Date(player.created_at).toLocaleString() %>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Auto Refresh Notice -->
+        <div class="text-center mt-6 text-gray-400 text-sm">
+            Page updates automatically every 30 seconds
+        </div>
+    </div>
+
+    <script>
+        // Auto refresh the page every 30 seconds
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+
+        // Auto scroll chat to bottom on load
+        window.onload = function() {
+            const chatBox = document.querySelector('.minecraft-chat-box');
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+    </script>
+</body>
+</html> 
