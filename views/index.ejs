@@ -11,25 +11,29 @@
     <!-- Navbar -->
     <nav class="bg-gray-900 bg-opacity-90 border-b-2 border-minecraft-stone shadow-lg">
         <div class="container mx-auto px-4">
+            <!-- Desktop and Mobile Layout -->
             <div class="flex items-center justify-between h-16">
-                <div class="flex items-center space-x-8">
-                    <div class="flex items-center space-x-4">
-                        <span class="text-2xl text-yellow-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
-                            Server Status
-                        </span>
-                        <div class="flex items-center space-x-2">
-                            <span class="<%= serverStatus.online ? 'text-green-400' : 'text-red-400' %> text-sm">
-                                ●
-                            </span>
-                            <span class="text-gray-300 text-sm font-minecraft">
-                                <%= serverStatus.address %>
-                            </span>
-                            <span class="text-xs text-gray-400">
-                                (<%= serverStatus.online ? 'Online' : 'Offline' %>)
-                            </span>
-                        </div>
+                <!-- Left Side - Always Visible -->
+                <div class="flex items-center space-x-4">
+                    <span class="text-xl lg:text-2xl text-yellow-300 drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]">
+                        Server Status
+                    </span>
+                    <div class="flex items-center space-x-2">
+                        <span class="<%= serverStatus.online ? 'text-green-400' : 'text-red-400' %> text-sm">●</span>
+                        <span class="text-gray-300 text-sm font-minecraft hidden sm:inline"><%= serverStatus.address %></span>
                     </div>
-                    <div class="hidden md:flex space-x-4">
+                </div>
+
+                <!-- Burger Menu Button -->
+                <button id="burger-menu" class="lg:hidden text-white hover:text-gray-300">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+
+                <!-- Desktop Menu -->
+                <div class="hidden lg:flex items-center space-x-8">
+                    <div class="flex space-x-4">
                         <span class="text-green-400 hover:text-green-300 cursor-pointer transition-colors">
                             Players: <%= onlinePlayers.total_online %>
                         </span>
@@ -37,31 +41,49 @@
                             Total: <%= playerList.length %>
                         </span>
                     </div>
+                    <div class="text-gray-400 text-sm">
+                        Last updated: <%= new Date().toLocaleTimeString() %>
+                    </div>
                 </div>
-                <div class="text-gray-400 text-sm">
-                    Last updated: <%= new Date().toLocaleTimeString() %>
+            </div>
+
+            <!-- Mobile Menu (Hidden by default) -->
+            <div id="mobile-menu" class="hidden lg:hidden py-4 border-t border-gray-700">
+                <div class="flex flex-col space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-400">
+                            Players: <%= onlinePlayers.total_online %>
+                        </span>
+                        <span class="text-blue-400">
+                            Total: <%= playerList.length %>
+                        </span>
+                    </div>
+                    <div class="text-gray-400 text-sm text-center">
+                        Last updated: <%= new Date().toLocaleTimeString() %>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="container mx-auto px-4 py-8">
-        <div class="grid gap-6 md:grid-cols-1 lg:grid-cols-3">
-            <!-- Online Players -->
-            <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone">
+    <div class="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <!-- Grid Container -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+            <!-- Online Players - Takes 1 column -->
+            <div class="bg-gray-800 bg-opacity-80 p-4 sm:p-6 rounded-lg border-2 sm:border-4 border-minecraft-stone">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl text-green-400">Online Players</h2>
-                    <span class="bg-green-500 px-3 py-1 rounded-full text-sm">
+                    <h2 class="text-xl sm:text-2xl text-green-400">Online Players</h2>
+                    <span class="bg-green-500 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
                         <%= onlinePlayers.total_online %> Online
                     </span>
                 </div>
-                <div class="space-y-3">
+                <div class="space-y-2 sm:space-y-3 max-h-[300px] overflow-y-auto pr-2">
                     <% onlinePlayers.player_list.forEach(player => { %>
-                        <div class="flex items-center space-x-3 bg-gray-700 bg-opacity-50 p-3 rounded minecraft-btn border-gray-600">
-                            <img src="https://mc-heads.net/avatar/<%= player.player_name %>" alt="<%= player.player_name %>" class="w-8 h-8 rounded">
-                            <div>
-                                <div class="text-green-400"><%= player.player_name %></div>
+                        <div class="flex items-center space-x-2 sm:space-x-3 bg-gray-700 bg-opacity-50 p-2 sm:p-3 rounded minecraft-btn border-gray-600">
+                            <img src="https://mc-heads.net/avatar/<%= player.player_name %>" alt="<%= player.player_name %>" class="w-6 h-6 sm:w-8 sm:h-8 rounded">
+                            <div class="min-w-0 flex-1">
+                                <div class="text-green-400 text-sm sm:text-base truncate"><%= player.player_name %></div>
                                 <div class="text-xs text-gray-400">
                                     <%
                                         const joinedDate = new Date(player.joined_at);
@@ -82,26 +104,28 @@
                 </div>
             </div>
 
-            <!-- Chat Section -->
-            <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone lg:col-span-2">
+            <!-- Chat Section - Takes 2 columns on large screens -->
+            <div class="lg:col-span-2 bg-gray-800 bg-opacity-80 p-4 sm:p-6 rounded-lg border-2 sm:border-4 border-minecraft-stone">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl text-yellow-400">Server Chat</h2>
-                    <span class="bg-yellow-500 px-3 py-1 rounded-full text-sm">
+                    <h2 class="text-xl sm:text-2xl text-yellow-400">Server Chat</h2>
+                    <span class="bg-yellow-500 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
                         <%= chat.total %> Messages
                     </span>
                 </div>
-                <div class="h-[500px] overflow-y-auto pr-2 minecraft-chat-box">
+                <div class="h-[300px] sm:h-[400px] lg:h-[500px] overflow-y-auto pr-2 minecraft-chat-box">
                     <div class="space-y-2">
                         <% [...chat.messages].reverse().forEach(msg => { %>
                             <div class="group hover:bg-gray-700 hover:bg-opacity-50 p-2 rounded transition-all">
                                 <div class="flex items-start space-x-2">
-                                    <img src="https://mc-heads.net/avatar/<%= msg.player_name %>" alt="<%= msg.player_name %>" class="w-6 h-6 rounded hidden group-hover:block">
-                                    <div>
-                                        <span class="text-gray-400 text-xs">
-                                            <%= new Date(msg.created_at).toLocaleTimeString() %>
-                                        </span>
-                                        <span class="text-yellow-500">&lt;<%= msg.player_name %>&gt;</span>
-                                        <span class="text-gray-200"><%= msg.message %></span>
+                                    <img src="https://mc-heads.net/avatar/<%= msg.player_name %>" alt="<%= msg.player_name %>" class="w-5 h-5 sm:w-6 sm:h-6 rounded hidden group-hover:block">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-baseline gap-x-1 text-xs sm:text-sm">
+                                            <span class="text-gray-400 whitespace-nowrap">
+                                                <%= new Date(msg.created_at).toLocaleTimeString() %>
+                                            </span>
+                                            <span class="text-yellow-500 whitespace-nowrap">&lt;<%= msg.player_name %>&gt;</span>
+                                            <span class="text-gray-200 break-words"><%= msg.message %></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -110,21 +134,21 @@
                 </div>
             </div>
 
-            <!-- All Players -->
-            <div class="bg-gray-800 bg-opacity-80 p-6 rounded-lg border-4 border-minecraft-stone lg:col-span-3">
+            <!-- All Players - Full width on all screens -->
+            <div class="lg:col-span-3 bg-gray-800 bg-opacity-80 p-4 sm:p-6 rounded-lg border-2 sm:border-4 border-minecraft-stone">
                 <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-2xl text-blue-400">All Players</h2>
-                    <span class="bg-blue-500 px-3 py-1 rounded-full text-sm">
+                    <h2 class="text-xl sm:text-2xl text-blue-400">All Players</h2>
+                    <span class="bg-blue-500 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm">
                         Total: <%= playerList.length %>
                     </span>
                 </div>
-                <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3 max-h-[300px] overflow-y-auto pr-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 max-h-[300px] overflow-y-auto pr-2">
                     <% playerList.forEach(player => { %>
-                        <div class="flex items-center space-x-3 bg-gray-700 bg-opacity-50 p-3 rounded minecraft-btn border-gray-600">
-                            <img src="https://mc-heads.net/avatar/<%= player.player_name %>" alt="<%= player.player_name %>" class="w-8 h-8 rounded">
-                            <div>
-                                <div class="text-gray-200"><%= player.player_name %></div>
-                                <div class="text-xs text-gray-400">
+                        <div class="flex items-center space-x-2 sm:space-x-3 bg-gray-700 bg-opacity-50 p-2 sm:p-3 rounded minecraft-btn border-gray-600">
+                            <img src="https://mc-heads.net/avatar/<%= player.player_name %>" alt="<%= player.player_name %>" class="w-6 h-6 sm:w-8 sm:h-8 rounded">
+                            <div class="min-w-0 flex-1">
+                                <div class="text-gray-200 text-sm sm:text-base truncate"><%= player.player_name %></div>
+                                <div class="text-xs text-gray-400 truncate">
                                     First seen: <%= new Date(player.created_at).toLocaleString() %>
                                 </div>
                             </div>
@@ -135,7 +159,7 @@
         </div>
 
         <!-- Auto Refresh Notice -->
-        <div class="text-center mt-6 text-gray-400 text-sm">
+        <div class="text-center mt-4 sm:mt-6 text-gray-400 text-xs sm:text-sm">
             Page updates automatically every 30 seconds
         </div>
     </div>
@@ -151,6 +175,27 @@
             const chatBox = document.querySelector('.minecraft-chat-box');
             chatBox.scrollTop = chatBox.scrollHeight;
         };
+
+        // Burger menu functionality
+        const burgerMenu = document.getElementById('burger-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        burgerMenu.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+            // Add animation classes
+            if (!mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('animate-fade-in');
+            } else {
+                mobileMenu.classList.remove('animate-fade-in');
+            }
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (event) => {
+            if (!burgerMenu.contains(event.target) && !mobileMenu.contains(event.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
     </script>
 </body>
 </html> 
