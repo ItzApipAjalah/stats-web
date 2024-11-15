@@ -46,7 +46,7 @@
                         Server Status
                     </span>
                     <div class="flex items-center space-x-2">
-                        <span class="<%= serverStatus.online ? 'text-green-400' : 'text-red-400' %> text-sm">●</span>
+                        <span class="<%= serverStatus.online ? 'text-green-400' : 'text-red-400' %> text-sm server-status-indicator">●</span>
                         <span class="text-gray-300 text-sm font-minecraft hidden sm:inline"><%= serverStatus.address %></span>
                     </div>
                 </div>
@@ -61,14 +61,14 @@
                 <!-- Desktop Menu -->
                 <div class="hidden lg:flex items-center space-x-8">
                     <div class="flex space-x-4">
-                        <span class="text-green-400 hover:text-green-300 cursor-pointer transition-colors">
+                        <span class="text-green-400 hover:text-green-300 cursor-pointer transition-colors online-players-count">
                             Players: <%= onlinePlayers.total_online %>
                         </span>
-                        <span class="text-blue-400 hover:text-blue-300 cursor-pointer transition-colors">
+                        <span class="text-blue-400 hover:text-blue-300 cursor-pointer transition-colors total-players-count">
                             Total: <%= playerList.length %>
                         </span>
                     </div>
-                    <div class="text-gray-400 text-sm">
+                    <div class="text-gray-400 text-sm last-updated">
                         Last updated: <%= formatToWIB(new Date()) %> WIB
                     </div>
                 </div>
@@ -192,15 +192,55 @@
     </div>
 
     <script>
-        // Auto refresh the page every 30 seconds
-        setTimeout(() => {
-            window.location.reload();
-        }, 30000);
+        // Function to update the UI with new data
+        function updateUI(data) {
+            // Update online players count in navbar
+            document.querySelectorAll('.online-players-count').forEach(el => {
+                el.textContent = `Players: ${data.onlinePlayers.total_online}`;
+            });
+
+            // Update total players count
+            document.querySelectorAll('.total-players-count').forEach(el => {
+                el.textContent = `Total: ${data.playerList.length}`;
+            });
+
+            // Update server status
+            const statusIndicator = document.querySelector('.server-status-indicator');
+            if (statusIndicator) {
+                statusIndicator.className = `${data.serverStatus.online ? 'text-green-400' : 'text-red-400'} text-sm server-status-indicator`;
+            }
+
+            // Update last updated time
+            document.querySelectorAll('.last-updated').forEach(el => {
+                el.textContent = `Last updated: ${formatToWIB(new Date(data.lastUpdate))} WIB`;
+            });
+
+            // Refresh the page every 5 minutes to prevent memory issues
+            setTimeout(() => {
+                window.location.reload();
+            }, 300000); // 5 minutes
+        }
+
+        // Function to fetch updates
+        async function fetchUpdates() {
+            try {
+                const response = await fetch('/api/data');
+                const data = await response.json();
+                updateUI(data);
+            } catch (error) {
+                console.error('Error fetching updates:', error);
+            }
+        }
+
+        // Fetch updates every 30 seconds
+        setInterval(fetchUpdates, 30000);
 
         // Auto scroll chat to bottom on load
         window.onload = function() {
             const chatBox = document.querySelector('.minecraft-chat-box');
-            chatBox.scrollTop = chatBox.scrollHeight;
+            if (chatBox) {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
         };
 
         // Burger menu functionality
@@ -209,7 +249,6 @@
 
         burgerMenu.addEventListener('click', () => {
             mobileMenu.classList.toggle('hidden');
-            // Add animation classes
             if (!mobileMenu.classList.contains('hidden')) {
                 mobileMenu.classList.add('animate-fade-in');
             } else {
