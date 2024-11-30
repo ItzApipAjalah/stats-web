@@ -119,7 +119,9 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/map', (req, res) => {
-    res.render('map');
+    // Get the protocol (http or https)
+    const protocol = req.protocol;
+    res.render('map', { protocol });
 });
 
 app.listen(port, () => {
