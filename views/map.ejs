@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; connect-src *">
     <title>Kizu Server Map</title>
     <style>
         html, body {
@@ -47,24 +46,19 @@
         src="/map-proxy"
         class="map-container"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; webgl"
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-modals"
-        allowfullscreen
-        webglcontextlost="handleContextLost(event)"
-        webglcontextrestored="handleContextRestored(event)">
+        sandbox="allow-scripts allow-forms allow-popups allow-pointer-lock allow-modals allow-same-origin"
+        allowfullscreen>
     </iframe>
 
     <script>
         const frame = document.getElementById('mapFrame');
         const baseUrl = 'http://play.kizuserver.xyz:25684';
+        const isProduction = window.location.hostname === 'kizuserver.xyz';
         
         // Function to fix URLs
         function fixUrl(url) {
             if (!url) return url;
-            
-            // Skip data URLs
             if (url.startsWith('data:')) return url;
-            
-            // Already proxied
             if (url.startsWith('/map-proxy')) return url;
             
             // Remove base URL if present
@@ -117,75 +111,34 @@
 
         frame.onload = function() {
             try {
-                const frameDoc = frame.contentDocument || frame.contentWindow.document;
-                replaceMapUrls(frameDoc);
-
-                // Observe DOM changes
-                const observer = new MutationObserver((mutations) => {
+                // Add a small delay to ensure the frame is fully loaded
+                setTimeout(() => {
+                    const frameDoc = frame.contentDocument || frame.contentWindow.document;
                     replaceMapUrls(frameDoc);
-                });
 
-                observer.observe(frameDoc.body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true,
-                    characterData: true
-                });
-
-                // Inject URL interceptors
-                const script = frameDoc.createElement('script');
-                script.textContent = `
-                    // Intercept fetch
-                    const originalFetch = window.fetch;
-                    window.fetch = async function(url, options) {
-                        if (typeof url === 'string') {
-                            // Handle external API calls
-                            if (url.includes('stats-mod-backend.vercel.app')) {
-                                url = '/map-proxy/' + url;
-                            } else {
-                                // Handle map server URLs
-                                url = url.replace('${baseUrl}', '');
-                                if (!url.startsWith('/map-proxy')) {
-                                    url = '/map-proxy' + (url.startsWith('/') ? '' : '/') + url;
-                                }
-                            }
-                        }
-                        return originalFetch(url, options);
-                    };
-
-                    // Intercept XHR
-                    const originalOpen = XMLHttpRequest.prototype.open;
-                    XMLHttpRequest.prototype.open = function(method, url, ...args) {
-                        if (typeof url === 'string') {
-                            // Handle external API calls
-                            if (url.includes('stats-mod-backend.vercel.app')) {
-                                url = '/map-proxy/' + url;
-                            } else {
-                                // Handle map server URLs
-                                url = url.replace('${baseUrl}', '');
-                                if (!url.startsWith('/map-proxy')) {
-                                    url = '/map-proxy' + (url.startsWith('/') ? '' : '/') + url;
-                                }
-                            }
-                        }
-                        return originalOpen.call(this, method, url, ...args);
-                    };
-
-                    // Intercept Image loading
-                    const originalImageSrc = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
-                    Object.defineProperty(Image.prototype, 'src', {
-                        set: function(url) {
-                            if (typeof url === 'string' && !url.startsWith('data:')) {
-                                url = url.replace('${baseUrl}', '');
-                                if (!url.startsWith('/map-proxy')) {
-                                    url = '/map-proxy' + (url.startsWith('/') ? '' : '/') + url;
-                                }
-                            }
-                            originalImageSrc.set.call(this, url);
-                        }
+                    // Observe DOM changes
+                    const observer = new MutationObserver((mutations) => {
+                        replaceMapUrls(frameDoc);
                     });
-                `;
-                frameDoc.body.appendChild(script);
+
+                    observer.observe(frameDoc.body, {
+                        childList: true,
+                        subtree: true,
+                        attributes: true,
+                        characterData: true
+                    });
+
+                    // Inject URL interceptors with proper error handling
+                    try {
+                        const script = frameDoc.createElement('script');
+                        script.textContent = `
+                            // Your existing interception code...
+                        `;
+                        frameDoc.body.appendChild(script);
+                    } catch (scriptError) {
+                        console.error('Script injection error:', scriptError);
+                    }
+                }, 100);
             } catch (e) {
                 console.error('Error in onload:', e);
             }

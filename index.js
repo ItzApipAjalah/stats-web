@@ -2,6 +2,7 @@ const express = require('express');
 const axios = require('axios');
 const path = require('path');
 const util = require('minecraft-server-util');
+const crypto = require('crypto');
 require('dotenv').config();
 const http = require('http');
 const httpProxy = require('http-proxy');
@@ -92,6 +93,12 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 app.use('/fonts', express.static(path.join(__dirname, 'public/fonts')));
 
+// Add nonce middleware BEFORE routes
+app.use((req, res, next) => {
+    res.locals.nonce = crypto.randomBytes(16).toString('base64');
+    next();
+});
+
 // API endpoints for client-side updates
 app.get('/api/data', async (req, res) => {
     // Check if cache needs updating
@@ -145,6 +152,7 @@ proxy.on('proxyRes', (proxyRes, req, res) => {
 
 // Create a single catch-all route for the map server
 app.all([
+    '/map-proxy',
     '/map-proxy/*',
     '/maps/*',
     '/assets/*',
@@ -155,12 +163,15 @@ app.all([
     '/*.png',
     '/*.jpg',
     '/*.gif',
-    '/*.ico'
+    '/*.ico',
+    '/*.ttf',
+    '/*.woff',
+    '/*.woff2'
 ], async (req, res) => {
     let path = req.url;
     
     // Skip proxying for data URLs
-    if (path.includes('data:image')) {
+    if (path.includes('data:')) {
         return res.status(200).send();
     }
 
@@ -182,13 +193,11 @@ app.all([
     
     // Regular map server proxy handling
     path = path.replace('/map-proxy', '');
-    
     if (!path.startsWith('/')) {
         path = '/' + path;
     }
 
-    req.url = path;
-
+    // Set proper headers for the proxy request
     const headers = {
         'Host': 'play.kizuserver.xyz:25684',
         'Origin': 'http://play.kizuserver.xyz:25684',
@@ -199,15 +208,32 @@ app.all([
         'Pragma': 'no-cache'
     };
 
+    // Add CORS headers
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+
     proxy.web(req, res, {
+        target: 'http://play.kizuserver.xyz:25684',
         headers: headers,
-        ignorePath: false
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        xfwd: true
     });
 });
 
 // Update the map endpoint
 app.get('/map', (req, res) => {
-    res.header('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *; img-src * data: blob:;");
+    res.header('Content-Security-Policy', `
+        default-src * 'self' data: blob: 'unsafe-inline' 'unsafe-eval';
+        script-src * 'self' 'unsafe-inline' 'unsafe-eval';
+        connect-src * 'self';
+        img-src * 'self' data: blob:;
+        frame-src * 'self';
+        style-src * 'self' 'unsafe-inline';
+        font-src * 'self' data:;
+    `.replace(/\s+/g, ' ').trim());
     res.header('Access-Control-Allow-Origin', '*');
     res.header('X-Frame-Options', 'SAMEORIGIN');
     res.render('map');
