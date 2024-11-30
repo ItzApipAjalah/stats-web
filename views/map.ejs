@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; connect-src *">
     <title>Kizu Server Map</title>
     <style>
         html, body {
@@ -23,50 +24,95 @@
             height: 100vh;
             border: none;
         }
+        .webgl-error {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fee;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <div id="webglError" class="webgl-error">
+        WebGL is not enabled or supported. Please enable WebGL in your browser settings.
+    </div>
+
     <iframe 
         id="mapFrame"
         src="/map-proxy"
         class="map-container"
-        allowfullscreen>
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; webgl"
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock allow-modals"
+        allowfullscreen
+        webglcontextlost="handleContextLost(event)"
+        webglcontextrestored="handleContextRestored(event)">
     </iframe>
 
     <script>
         const frame = document.getElementById('mapFrame');
+        const baseUrl = 'http://play.kizuserver.xyz:25684';
         
-        // Function to replace all absolute URLs with proxy URLs
-        function replaceMapUrls(doc) {
-            const baseUrl = 'http://play.kizuserver.xyz:25684';
-            const elements = doc.getElementsByTagName('*');
+        // Function to fix URLs
+        function fixUrl(url) {
+            if (!url) return url;
             
-            Array.from(elements).forEach(element => {
-                // Handle src attributes
-                if (element.src && element.src.includes(baseUrl)) {
-                    element.src = element.src.replace(baseUrl, '/map-proxy');
-                }
-                
-                // Handle href attributes
-                if (element.href && element.href.includes(baseUrl)) {
-                    element.href = element.href.replace(baseUrl, '/map-proxy');
-                }
-                
-                // Handle background images in style attribute
-                if (element.style && element.style.backgroundImage) {
-                    if (element.style.backgroundImage.includes(baseUrl)) {
-                        element.style.backgroundImage = element.style.backgroundImage.replace(baseUrl, '/map-proxy');
-                    }
-                }
-            });
+            // Skip data URLs
+            if (url.startsWith('data:')) return url;
+            
+            // Already proxied
+            if (url.startsWith('/map-proxy')) return url;
+            
+            // Remove base URL if present
+            url = url.replace(baseUrl, '');
+            
+            // Add proxy prefix
+            if (!url.startsWith('/')) url = '/' + url;
+            return '/map-proxy' + url;
+        }
 
-            // Handle inline styles
-            const styleSheets = doc.getElementsByTagName('style');
-            Array.from(styleSheets).forEach(style => {
-                if (style.innerHTML.includes(baseUrl)) {
-                    style.innerHTML = style.innerHTML.replace(new RegExp(baseUrl, 'g'), '/map-proxy');
-                }
-            });
+        // Function to replace all URLs with proxy URLs
+        function replaceMapUrls(doc) {
+            try {
+                // Handle all elements with src or href
+                const elements = doc.querySelectorAll('[src], [href], [data-src]');
+                elements.forEach(element => {
+                    ['src', 'href', 'data-src'].forEach(attr => {
+                        if (element.hasAttribute(attr)) {
+                            element.setAttribute(attr, fixUrl(element.getAttribute(attr)));
+                        }
+                    });
+                });
+
+                // Handle inline styles with URLs
+                const styles = doc.getElementsByTagName('style');
+                Array.from(styles).forEach(style => {
+                    if (style.textContent) {
+                        style.textContent = style.textContent.replace(
+                            /url\(['"]?([^'")\s]+)['"]?\)/g,
+                            (match, url) => `url('${fixUrl(url)}')`
+                        );
+                    }
+                });
+
+                // Handle background images
+                const elementsWithStyle = doc.querySelectorAll('[style*="url"]');
+                elementsWithStyle.forEach(element => {
+                    const style = element.getAttribute('style');
+                    if (style) {
+                        element.setAttribute('style', style.replace(
+                            /url\(['"]?([^'")\s]+)['"]?\)/g,
+                            (match, url) => `url('${fixUrl(url)}')`
+                        ));
+                    }
+                });
+            } catch (e) {
+                console.error('Error in replaceMapUrls:', e);
+            }
         }
 
         frame.onload = function() {
@@ -74,17 +120,74 @@
                 const frameDoc = frame.contentDocument || frame.contentWindow.document;
                 replaceMapUrls(frameDoc);
 
-                // Handle dynamic content changes
+                // Observe DOM changes
                 const observer = new MutationObserver((mutations) => {
                     replaceMapUrls(frameDoc);
                 });
 
                 observer.observe(frameDoc.body, {
                     childList: true,
-                    subtree: true
+                    subtree: true,
+                    attributes: true,
+                    characterData: true
                 });
+
+                // Inject URL interceptors
+                const script = frameDoc.createElement('script');
+                script.textContent = `
+                    // Intercept fetch
+                    const originalFetch = window.fetch;
+                    window.fetch = async function(url, options) {
+                        if (typeof url === 'string') {
+                            // Handle external API calls
+                            if (url.includes('stats-mod-backend.vercel.app')) {
+                                url = '/map-proxy/' + url;
+                            } else {
+                                // Handle map server URLs
+                                url = url.replace('${baseUrl}', '');
+                                if (!url.startsWith('/map-proxy')) {
+                                    url = '/map-proxy' + (url.startsWith('/') ? '' : '/') + url;
+                                }
+                            }
+                        }
+                        return originalFetch(url, options);
+                    };
+
+                    // Intercept XHR
+                    const originalOpen = XMLHttpRequest.prototype.open;
+                    XMLHttpRequest.prototype.open = function(method, url, ...args) {
+                        if (typeof url === 'string') {
+                            // Handle external API calls
+                            if (url.includes('stats-mod-backend.vercel.app')) {
+                                url = '/map-proxy/' + url;
+                            } else {
+                                // Handle map server URLs
+                                url = url.replace('${baseUrl}', '');
+                                if (!url.startsWith('/map-proxy')) {
+                                    url = '/map-proxy' + (url.startsWith('/') ? '' : '/') + url;
+                                }
+                            }
+                        }
+                        return originalOpen.call(this, method, url, ...args);
+                    };
+
+                    // Intercept Image loading
+                    const originalImageSrc = Object.getOwnPropertyDescriptor(Image.prototype, 'src');
+                    Object.defineProperty(Image.prototype, 'src', {
+                        set: function(url) {
+                            if (typeof url === 'string' && !url.startsWith('data:')) {
+                                url = url.replace('${baseUrl}', '');
+                                if (!url.startsWith('/map-proxy')) {
+                                    url = '/map-proxy' + (url.startsWith('/') ? '' : '/') + url;
+                                }
+                            }
+                            originalImageSrc.set.call(this, url);
+                        }
+                    });
+                `;
+                frameDoc.body.appendChild(script);
             } catch (e) {
-                console.error('Error updating iframe content:', e);
+                console.error('Error in onload:', e);
             }
         };
     </script>
