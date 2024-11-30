@@ -119,9 +119,12 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/map', (req, res) => {
-    // Get the protocol (http or https)
-    const protocol = req.protocol;
-    res.render('map', { protocol });
+    // Add headers to allow mixed content
+    res.header("Content-Security-Policy", "upgrade-insecure-requests");
+    res.header("X-Content-Security-Policy", "upgrade-insecure-requests");
+    res.header("X-Frame-Options", "ALLOW-FROM http://play.kizuserver.xyz:25684/");
+    res.header("Access-Control-Allow-Origin", "*");
+    res.render('map');
 });
 
 app.listen(port, () => {
