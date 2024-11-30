@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Kizu Server Map</title>
     <style>
         html, body {
@@ -12,8 +11,14 @@
             height: 100%;
             width: 100%;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
         .map-container {
+            width: 100%;
+            height: 100vh;
+            border: none;
+        }
+        #mapFrame {
             width: 100%;
             height: 100vh;
             border: none;
@@ -23,20 +28,31 @@
 <body>
     <iframe 
         id="mapFrame"
-        src="http://play.kizuserver.xyz:25684/" 
+        src="http://play.kizuserver.xyz:25684"
         class="map-container"
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         allowfullscreen>
     </iframe>
 
     <script>
-        // Force HTTP for the iframe content
-        document.addEventListener('DOMContentLoaded', function() {
-            const frame = document.getElementById('mapFrame');
-            if (window.location.protocol === 'https:') {
-                frame.src = frame.src.replace('https://', 'http://');
+        const frame = document.getElementById('mapFrame');
+        
+        frame.onload = function() {
+            try {
+                const frameDoc = frame.contentDocument || frame.contentWindow.document;
+                
+                // Only update navigation links, not asset links
+                const anchorLinks = frameDoc.getElementsByTagName('a');
+                
+                Array.from(anchorLinks).forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.startsWith('/assets/') && !href.startsWith('http')) {
+                        link.href = `http://play.kizuserver.xyz:25684${href}`;
+                    }
+                });
+            } catch (e) {
+                console.error('Error updating iframe content:', e);
             }
-        });
+        };
     </script>
 </body>
 </html> 

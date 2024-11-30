@@ -3,6 +3,14 @@ const axios = require('axios');
 const path = require('path');
 const util = require('minecraft-server-util');
 require('dotenv').config();
+const http = require('http');
+const httpProxy = require('http-proxy');
+const proxy = httpProxy.createProxyServer({
+    changeOrigin: true,
+    ws: true,
+    secure: false,
+    followRedirects: true
+});
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -118,12 +126,41 @@ app.get('/', async (req, res) => {
     });
 });
 
+// Add error handling for the proxy
+proxy.on('error', (err, req, res) => {
+    console.error('Proxy error:', err);
+    if (!res.headersSent) {
+        res.status(500).send('Proxy error');
+    }
+});
+
+// Handle all map-related requests
+app.all('/map-proxy*', (req, res) => {
+    const target = 'http://play.kizuserver.xyz:25684';
+    
+    proxy.web(req, res, {
+        target: target,
+        changeOrigin: true,
+        secure: false,
+        ws: true
+    });
+});
+
+// Add a specific handler for assets
+app.get('/assets/*', (req, res) => {
+    const target = 'http://play.kizuserver.xyz:25684';
+    
+    proxy.web(req, res, {
+        target: target,
+        changeOrigin: true,
+        secure: false
+    });
+});
+
+// Update the map endpoint
 app.get('/map', (req, res) => {
-    // Add headers to allow mixed content
-    res.header("Content-Security-Policy", "upgrade-insecure-requests");
-    res.header("X-Content-Security-Policy", "upgrade-insecure-requests");
-    res.header("X-Frame-Options", "ALLOW-FROM http://play.kizuserver.xyz:25684/");
-    res.header("Access-Control-Allow-Origin", "*");
+    res.header('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; connect-src *");
+    res.header('Access-Control-Allow-Origin', '*');
     res.render('map');
 });
 
