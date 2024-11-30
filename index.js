@@ -19,34 +19,44 @@ let cache = {
     onlinePlayers: null,
     chat: null,
     serverStatus: false,
-    lastUpdate: 0
+    lastUpdate: 0,
+    errors: {}
 };
 
 // Cache duration in milliseconds (30 seconds)
 const CACHE_DURATION = 30000;
 
-async function updateCache() {
+async function updateSingleEndpoint(endpoint, cacheKey) {
     try {
-        const [playerListResponse, onlinePlayersResponse, chatResponse] = await Promise.all([
-            api.get('https://stats-mod-backend.vercel.app/api/players'),
-            api.get('https://stats-mod-backend.vercel.app/api/player-online'),
-            api.get('https://stats-mod-backend.vercel.app/api/chat?page=1&limit=50')
-        ]);
-
-        const serverStatus = await checkServerStatus('play.kizuserver.xyz');
-        
-        cache = {
-            playerList: playerListResponse.data,
-            onlinePlayers: onlinePlayersResponse.data,
-            chat: chatResponse.data,
-            serverStatus: serverStatus,
-            lastUpdate: Date.now()
-        };
-
-        console.log('Cache updated:', new Date().toLocaleString());
+        const response = await api.get(`https://stats-mod-backend.vercel.app/api/${endpoint}`);
+        cache[cacheKey] = response.data;
+        delete cache.errors[cacheKey];
+        return true;
     } catch (error) {
-        console.error('Error updating cache:', error.message);
+        console.error(`Error updating ${cacheKey}:`, error.message);
+        cache.errors[cacheKey] = error.message;
+        return false;
     }
+}
+
+async function updateCache() {
+    const updates = [
+        updateSingleEndpoint('players', 'playerList'),
+        updateSingleEndpoint('player-online', 'onlinePlayers'),
+        updateSingleEndpoint('chat?page=1&limit=50', 'chat')
+    ];
+
+    try {
+        const serverStatus = await checkServerStatus('play.kizuserver.xyz');
+        cache.serverStatus = serverStatus;
+    } catch (error) {
+        console.error('Server status check error:', error.message);
+        cache.errors.serverStatus = error.message;
+    }
+
+    await Promise.allSettled(updates);
+    cache.lastUpdate = Date.now();
+    console.log('Cache updated:', new Date().toLocaleString());
 }
 
 async function checkServerStatus(host, port = 25689) {
@@ -72,7 +82,13 @@ app.use(express.static('public'));
 app.use('/fonts', express.static(path.join(__dirname, 'public/fonts')));
 
 // API endpoints for client-side updates
-app.get('/api/data', (req, res) => {
+app.get('/api/data', async (req, res) => {
+    // Check if cache needs updating
+    const now = Date.now();
+    if (!cache.lastUpdate || (now - cache.lastUpdate) >= CACHE_DURATION) {
+        await updateCache();
+    }
+
     res.json({
         playerList: cache.playerList,
         onlinePlayers: cache.onlinePlayers,
@@ -81,15 +97,14 @@ app.get('/api/data', (req, res) => {
             online: cache.serverStatus,
             address: 'play.kizuserver.xyz'
         },
-        lastUpdate: cache.lastUpdate
+        lastUpdate: cache.lastUpdate,
+        errors: cache.errors
     });
 });
 
 app.get('/', async (req, res) => {
-    // If cache is empty, update it
-    if (!cache.playerList) {
-        await updateCache();
-    }
+    // Always update cache on page load
+    await updateCache();
 
     res.render('index', {
         playerList: cache.playerList,
@@ -98,8 +113,13 @@ app.get('/', async (req, res) => {
         serverStatus: {
             online: cache.serverStatus,
             address: 'play.kizuserver.xyz'
-        }
+        },
+        errors: cache.errors
     });
+});
+
+app.get('/map', (req, res) => {
+    res.render('map');
 });
 
 app.listen(port, () => {
