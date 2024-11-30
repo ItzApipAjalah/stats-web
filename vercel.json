@@ -4,37 +4,80 @@
         {
             "src": "index.js",
             "use": "@vercel/node"
-        },
-        {
-            "src": "public/**",
-            "use": "@vercel/static"
-        },
-        {
-            "src": "views/**",
-            "use": "@vercel/static"
         }
     ],
     "routes": [
         {
-            "src": "/css/(.*)",
-            "dest": "/public/css/$1"
+            "src": "/map-proxy/(.*)",
+            "dest": "/index.js"
         },
         {
-            "src": "/fonts/(.*)",
-            "dest": "/public/fonts/$1"
+            "src": "/map-proxy",
+            "dest": "/index.js"
         },
         {
-            "src": "/views/(.*)",
-            "dest": "/views/$1"
+            "src": "/maps/(.*)",
+            "dest": "/index.js"
         },
         {
-            "handle": "filesystem"
+            "src": "/assets/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/lang/(.*)",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.json",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.js",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.css",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.png",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.jpg",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.gif",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.ico",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.ttf",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.woff",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/(.*)\\.woff2",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/map",
+            "dest": "/index.js"
+        },
+        {
+            "src": "/api/(.*)",
+            "dest": "/index.js"
         },
         {
             "src": "/(.*)",
-            "dest": "index.js"
+            "dest": "/index.js"
         }
-    ],
-    "buildCommand": "npm run build:css",
-    "outputDirectory": "public"
+    ]
 }
