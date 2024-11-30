@@ -28,7 +28,7 @@
 <body>
     <iframe 
         id="mapFrame"
-        src="http://play.kizuserver.xyz:25684"
+        src="/map-proxy"
         class="map-container"
         allowfullscreen>
     </iframe>
@@ -36,18 +36,52 @@
     <script>
         const frame = document.getElementById('mapFrame');
         
+        // Function to replace all absolute URLs with proxy URLs
+        function replaceMapUrls(doc) {
+            const baseUrl = 'http://play.kizuserver.xyz:25684';
+            const elements = doc.getElementsByTagName('*');
+            
+            Array.from(elements).forEach(element => {
+                // Handle src attributes
+                if (element.src && element.src.includes(baseUrl)) {
+                    element.src = element.src.replace(baseUrl, '/map-proxy');
+                }
+                
+                // Handle href attributes
+                if (element.href && element.href.includes(baseUrl)) {
+                    element.href = element.href.replace(baseUrl, '/map-proxy');
+                }
+                
+                // Handle background images in style attribute
+                if (element.style && element.style.backgroundImage) {
+                    if (element.style.backgroundImage.includes(baseUrl)) {
+                        element.style.backgroundImage = element.style.backgroundImage.replace(baseUrl, '/map-proxy');
+                    }
+                }
+            });
+
+            // Handle inline styles
+            const styleSheets = doc.getElementsByTagName('style');
+            Array.from(styleSheets).forEach(style => {
+                if (style.innerHTML.includes(baseUrl)) {
+                    style.innerHTML = style.innerHTML.replace(new RegExp(baseUrl, 'g'), '/map-proxy');
+                }
+            });
+        }
+
         frame.onload = function() {
             try {
                 const frameDoc = frame.contentDocument || frame.contentWindow.document;
-                
-                // Only update navigation links, not asset links
-                const anchorLinks = frameDoc.getElementsByTagName('a');
-                
-                Array.from(anchorLinks).forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href && !href.startsWith('/assets/') && !href.startsWith('http')) {
-                        link.href = `http://play.kizuserver.xyz:25684${href}`;
-                    }
+                replaceMapUrls(frameDoc);
+
+                // Handle dynamic content changes
+                const observer = new MutationObserver((mutations) => {
+                    replaceMapUrls(frameDoc);
+                });
+
+                observer.observe(frameDoc.body, {
+                    childList: true,
+                    subtree: true
                 });
             } catch (e) {
                 console.error('Error updating iframe content:', e);

@@ -9,7 +9,12 @@ const proxy = httpProxy.createProxyServer({
     changeOrigin: true,
     ws: true,
     secure: false,
-    followRedirects: true
+    followRedirects: true,
+    xfwd: false,
+    headers: {
+        'Accept-Encoding': 'identity',
+        'Host': 'play.kizuserver.xyz:25684'
+    }
 });
 
 const app = express();
@@ -134,34 +139,41 @@ proxy.on('error', (err, req, res) => {
     }
 });
 
-// Handle all map-related requests
-app.all('/map-proxy*', (req, res) => {
+// Handle all map-related requests including assets
+app.all(['/map-proxy', '/map-proxy/*', '/assets/*'], (req, res) => {
     const target = 'http://play.kizuserver.xyz:25684';
+    
+    // Remove /map-proxy from the path if it exists
+    req.url = req.url.replace('/map-proxy', '');
     
     proxy.web(req, res, {
         target: target,
         changeOrigin: true,
         secure: false,
+        ws: true,
+        headers: {
+            'Host': 'play.kizuserver.xyz:25684',
+            'Origin': 'http://play.kizuserver.xyz:25684',
+            'Referer': 'http://play.kizuserver.xyz:25684/'
+        }
+    });
+});
+
+// Update the map endpoint with necessary headers
+app.get('/map', (req, res) => {
+    res.header('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src *; img-src * data: blob:;");
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('X-Frame-Options', 'SAMEORIGIN');
+    res.render('map');
+});
+
+// Handle WebSocket connections
+const server = http.createServer(app);
+server.on('upgrade', (req, socket, head) => {
+    proxy.ws(req, socket, head, {
+        target: 'ws://play.kizuserver.xyz:25684',
         ws: true
     });
-});
-
-// Add a specific handler for assets
-app.get('/assets/*', (req, res) => {
-    const target = 'http://play.kizuserver.xyz:25684';
-    
-    proxy.web(req, res, {
-        target: target,
-        changeOrigin: true,
-        secure: false
-    });
-});
-
-// Update the map endpoint
-app.get('/map', (req, res) => {
-    res.header('Content-Security-Policy', "default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; connect-src *");
-    res.header('Access-Control-Allow-Origin', '*');
-    res.render('map');
 });
 
 app.listen(port, () => {
